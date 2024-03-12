@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+<div class="container mt-3">
+    <h2>{% if object %}Edit Gym{% else %}Add New Gym{% endif %}</h2>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <h4>Location</h4>
+        {{ location_form.as_p }}
+        <h4>Contact Information</h4>
+        {{ contact_info_form.as_p }}
+
+        <h4>Images</h4>
+        <div id="image-formset">
+            {{ image_formset.management_form }}
+            {% for form in image_formset %}
+                <div class="form-copy">
+                    {{ form }}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="add-row-image">Add more images</button>
+
+        <h4>Membership Types</h4>
+        <div id="membership-formset">
+            {{ membership_formset.management_form }}
+            {% for form in membership_formset %}
+                <div class="form-copy">
+                    {{ form }}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="add-row-membership">Add more membership types</button>
+
+        <h4>Operating Hours</h4>
+        <div id="operating-hour-formset">
+            {{ operating_hour_formset.management_form }}
+            {% for form in operating_hour_formset %}
+                <div class="form-copy">
+                    {{ form }}
+                </div>
+            {% endfor %}
+        </div>
+        <button type="button" class="add-row-operating-hour">Add more operating hours</button>
+
+        <button type="submit" class="btn btn-primary mt-3">{% if object %}Update{% else %}Create{% endif %} Gym</button>
+    </form>
+</div>
+
+<script>
+    function addFormRow(formsetPrefix) {
+        let formset = $('#' + formsetPrefix + '-formset');
+        let formIndex = $('#id_' + formsetPrefix + '-TOTAL_FORMS').val();
+        let newForm = formset.find('.form-copy:first').clone(true).find(':input').each(function() {
+            let newName = $(this).attr('name').replace('-0-', '-' + formIndex + '-');
+            let newId = 'id_' + newName;
+            $(this).attr({'name': newName, 'id': newId}).val('').removeAttr('checked');
+        }).end().appendTo(formset);
+        $('#id_' + formsetPrefix + '-TOTAL_FORMS').val(parseInt(formIndex) + 1);
+    }
+
+    $(document).ready(function () {
+    $('.add-row-membership').click(function () {
+        var formsetDiv = $('#membership-formset');
+        var totalForms = $('#id_memberships-TOTAL_FORMS');
+        var formIndex = parseInt(totalForms.val());
+        var newForm = formsetDiv.find('.form-copy').first().clone(true);
+
+        newForm.find(':input').each(function () {
+            var name = $(this).attr('name').replace('-0-', '-' + formIndex + '-');
+            var id = 'id_' + name;
+            $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
+        });
+
+        formsetDiv.append(newForm);
+        totalForms.val(formIndex + 1);
+    });
+    });
+
+    $(document).ready(function () {
+    $('.add-row-image').click(function () {
+        var formsetDiv = $('#image-formset');
+        var totalForms = $('#id_images-TOTAL_FORMS');
+        var formIndex = parseInt(totalForms.val());
+        var newForm = formsetDiv.find('.form-copy').first().clone(true);
+
+        newForm.find(':input').each(function () {
+            var name = $(this).attr('name').replace('-0-', '-' + formIndex + '-');
+            var id = 'id_' + name;
+            $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
+        });
+
+        formsetDiv.append(newForm);
+        totalForms.val(formIndex + 1);
+    });
+    });
+
+    $(document).ready(function () {
+        $('.add-row-operating-hour').click(function () {
+            var formsetDiv = $('#operating-hour-formset'); // Ensure this matches your HTML ID
+            var totalForms = $('#id_operating_hours-TOTAL_FORMS');
+            var formIndex = parseInt(totalForms.val());
+            var newForm = formsetDiv.find('.form-copy').first().clone(true);
+
+            newForm.find(':input').each(function () {
+                var name = $(this).attr('name').replace('-0-', '-' + formIndex + '-');
+                var id = 'id_' + name;
+                $(this).attr({'name': name, 'id': id}).val('').removeAttr('checked');
+            });
+
+            formsetDiv.append(newForm);
+            totalForms.val(formIndex + 1);
+        });
+    });
+</script>
+{% endblock %}

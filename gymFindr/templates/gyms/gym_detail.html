@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h2 class="mb-3">{{ gym.name }}</h2>
+            <p>{{ gym.description }}</p>
+
+            <!-- Displaying gym images if any -->
+            <div class="gym-images mb-3">
+                {% for image in gym.images.all %}
+                    <img src="{{ image.image.url }}" class="img-fluid mb-2" alt="Gym image" style="max-height: 200px; margin-right: 10px;">
+                {% endfor %}
+            </div>
+
+            <!-- Membership details -->
+            <div class="membership-details mb-3">
+                <h4>Membership Pricing</h4>
+                {% for membership in gym.membership_types.all %}
+                    <p><strong>{{ membership.get_type_display }}:</strong> ${{ membership.price }}</p>
+                {% endfor %}
+                {% if gym.free_trial %}
+                    <p class="text-success"><i class="fas fa-check-circle"></i> Free trial available</p>
+                {% endif %}
+            </div>
+
+            <!-- Gym details like amenities, classes, and operating hours -->
+            <div class="amenities mb-3">
+                <h4>Amenities <i class="fas fa-dumbbell"></i></h4>
+                <ul>
+                    {% for amenity in gym.amenities.all %}
+                        <li>{{ amenity.get_name_display }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="classes mb-3">
+                <h4>Classes <i class="fas fa-running"></i></h4>
+                <ul>
+                    {% for class in gym.classes.all %}
+                        <li>{{ class.get_name_display }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="operating-hours">
+                <h4>Operating Hours <i class="fas fa-clock"></i></h4>
+                <ul>
+                    {% for hour in gym.operating_hours.all %}
+                        <li>{{ hour.get_day_display }}: {{ hour.open_time|time:"H:i" }} - {{ hour.close_time|time:"H:i" }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- Location & Contact Info -->
+            <div class="location-contact-info mt-4">
+                <h4>Location & Contact <i class="fas fa-map-marker-alt"></i></h4>
+                <p>{{ gym.location.street_address1 }} {{ gym.location.street_address2 }}, {{ gym.location.city }}, {{ gym.location.zip_code }}, {{ gym.location.country }}</p>
+                <p>Email: {{ gym.contact_info.email }}</p>
+                <p>Phone: {{ gym.contact_info.phone }}</p>
+                {% if gym.contact_info.website %}
+                    <p>Website: <a href="{{ gym.contact_info.website }}">{{ gym.contact_info.website }}</a></p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="col-md-4">
+            <!-- if the user is the gym owner or staff, show edit/delete buttons -->
+            {% if user == gym.owner %}
+                <a href="{% url 'gymFindr:gym_edit' pk=gym.pk %}" class="btn btn-primary btn-block mb-2">Edit Gym</a>
+                <a href="{% url 'gymFindr:gym_delete' pk=gym.pk %}" class="btn btn-danger btn-block">Delete Gym</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

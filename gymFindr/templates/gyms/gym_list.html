@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Gym Listings</h2>
+<div class="gym-list">
+    {% for gym in gyms %}
+    <div class="gym">
+        <h3><a href="{% url 'gymFindr:gym_detail' pk=gym.pk %}">{{ gym.name }}</a></h3>
+        <p>{{ gym.description|truncatewords:20 }}</p>
+    </div>
+    {% endfor %}
+    <a href="{% url 'gymFindr:gym_create' %}" class="btn btn-success">Add New Gym</a>
+</div>
+{% endblock %}

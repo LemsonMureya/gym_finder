@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>My Gyms</h2>
+    <ul>
+        {% for gym in object_list %}
+            <li><a href="{% url 'gymFindr:gym_detail' pk=gym.pk %}">{{ gym.name }}</a></li>
+        {% empty %}
+            <li>No gyms added yet.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
