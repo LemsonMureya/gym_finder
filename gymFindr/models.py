@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, Permis
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
+from django.contrib.gis.db import models as geomodels
 
 
 class CustomUserManager(BaseUserManager):
@@ -74,6 +75,7 @@ class Location(models.Model):
     city = models.CharField(max_length=100)
     zip_code = models.CharField(max_length=20)
     country = models.CharField(max_length=100)
+    coordinates = geomodels.PointField(geography=True, blank=True, null=True)
 
     def __str__(self):
         return f"{self.street_address1}, {self.city}, {self.country}"

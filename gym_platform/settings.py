@@ -21,7 +21,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
-
+GDAL_LIBRARY_PATH = r'C:\Users\Lemson Mureya\miniconda3\envs\demoEnv\Library\bin\gdal.dll'
+os.environ['GDAL_LIBRARY_PATH'] = GDAL_LIBRARY_PATH
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'gymFindr',
+    'django.contrib.gis',
 ]
 
 MIDDLEWARE = [
@@ -74,10 +76,22 @@ WSGI_APPLICATION = 'gym_platform.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
+        'NAME': 'gymfindr',
+        'USER': 'lemson',
+        'PASSWORD': 'test_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 

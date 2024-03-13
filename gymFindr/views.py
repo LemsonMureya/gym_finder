@@ -1,3 +1,4 @@
+import requests
 from django.views.generic import ListView, DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.contrib.auth.views import LoginView, LogoutView
@@ -14,6 +15,9 @@ from django.views import generic
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
 from django.http import HttpResponseForbidden
+from django.conf import settings
+from django.contrib.gis.geos import Point, fromstr
+from django.contrib.gis.db.models.functions import Distance
 
 
 User = get_user_model()
@@ -65,6 +69,18 @@ class GymDetailView(DetailView):
     context_object_name = 'gym'
     template_name = 'gyms/gym_detail.html'
 
+def geocode_address(address):
+    """Converts address to coordinates using Google Maps Geocoding API."""
+    api_url = 'https://maps.googleapis.com/maps/api/geocode/json'
+    params = {'address': address, 'key': 'AIzaSyD6543p_Xqlvs0-rJZqORrh_w_-XWz_11w'}
+    response = requests.get(api_url, params=params)
+    if response.status_code == 200:
+        data = response.json()
+        if data['results']:
+            location = data['results'][0]['geometry']['location']
+            return location['lat'], location['lng']
+    return None, None
+
 class GymCreateView(LoginRequiredMixin, CreateView):
     model = Gym
     form_class = GymForm
@@ -101,7 +117,23 @@ class GymCreateView(LoginRequiredMixin, CreateView):
             self.object.owner = self.request.user
 
             # Explicitly saving location and contact info first
-            location = location_form.save()
+            # location = location_form.save()
+            location = location_form.save(commit=False)
+            full_address = f"{location.street_address1}, {location.city}, {location.zip_code}, {location.country}"
+            lat, lng = geocode_address(full_address)
+            if lat and lng:
+                # If geocoding is successful, use the precise coordinates
+                location.coordinates = Point(lng, lat, srid=4326)
+            else:
+                # Fallback: Attempt geocoding with just city and country (or zip code)
+                fallback_address = f"{location.city}, {location.country}"
+                lat, lng = geocode_address(fallback_address)
+                if lat and lng:
+                    location.coordinates = Point(lng, lat, srid=4326)
+                else:
+                     # Set to default New York City coordinates
+                     location.coordinates = Point(-74.0060, 40.7128, srid=4326)  # Placeholder or predefined point
+            location.save()
             contact_info = contact_info_form.save()
             self.object.location = location
             self.object.contact_info = contact_info
@@ -155,7 +187,23 @@ class GymUpdateView(LoginRequiredMixin, UpdateView):
 
             self.object = form.save()
             # Saving Location and ContactInfo with explicit reference
-            location = location_form.save()
+            location = location_form.save(commit=False)
+            full_address = f"{location.street_address1}, {location.city}, {location.zip_code}, {location.country}"
+            lat, lng = geocode_address(full_address)
+
+            if lat and lng:
+                # If geocoding is successful, use the precise coordinates
+                location.coordinates = Point(lng, lat, srid=4326)
+            else:
+                # Fallback: Attempt geocoding with just city and country (or zip code)
+                fallback_address = f"{location.city}, {location.country}"
+                lat, lng = geocode_address(fallback_address)
+                if lat and lng:
+                    location.coordinates = Point(lng, lat, srid=4326)
+                else:
+                     # Set to default New York City coordinates
+                     location.coordinates = Point(-74.0060, 40.7128, srid=4326)  # Placeholder or predefined point
+            location.save()
             contact_info = contact_info_form.save()
             self.object.location = location
             self.object.contact_info = contact_info
@@ -199,31 +247,48 @@ class GymSearchView(ListView):
         queryset = super().get_queryset()
         self.form = GymSearchForm(self.request.GET or None)
         if self.form.is_bound:
-            # Ensure the form is valid or raise a validation error
             try:
                 self.form.is_valid()
             except ValidationError:
                 return Gym.objects.none()
 
-            # Ensure at least one field has been filled
-            query = self.form.cleaned_data.get('query')
-            class_category = self.form.cleaned_data.get('class_category')
-            amenity = self.form.cleaned_data.get('amenity')
+            use_current_location = self.request.GET.get('use_current_location') == 'on'
+            lat = self.request.GET.get('lat')
+            lng = self.request.GET.get('lng')
+            search_location = self.form.cleaned_data.get('search_location')
 
-            if query or class_category or amenity:
+            if use_current_location and lat and lng:
+                try:
+                    lat = float(lat)
+                    lng = float(lng)
+                    user_location = Point(lng, lat, srid=4326)
+                    queryset = queryset.annotate(distance=Distance('location__coordinates', user_location)).order_by('distance')
+                except ValueError:
+                    # Handle the error when conversion fails
+                    queryset = Gym.objects.none()
+            elif search_location:
+                # Use the search_location to geocode and filter the queryset based on distance
+                lat, lng = geocode_address(search_location)  # Implement this function based on your geocoding service
+                if lat is not None and lng is not None:
+                    search_point = Point(lng, lat, srid=4326)
+                    queryset = queryset.annotate(distance=Distance('location__coordinates', search_point)).order_by('distance')
+                else:
+                    # Fallback if geocoding fails or no location found
+                    queryset = Gym.objects.none()
+            else:
+                # Your existing filters for query, class_category, and amenity
                 filters = Q()
+                query = self.form.cleaned_data.get('query')
+                class_category = self.form.cleaned_data.get('class_category')
+                amenity = self.form.cleaned_data.get('amenity')
                 if query:
-                    filters |= Q(name__icontains=query) | Q(description__icontains=query) | Q(location__city__icontains=query) | Q(location__zip_code__icontains=query) | Q(location__street_address1__icontains=query)
+                    filters |= Q(name__icontains=query) | Q(description__icontains=query)
                 if class_category:
                     filters &= Q(classes=class_category)
                 if amenity:
                     filters &= Q(amenities=amenity)
                 queryset = queryset.filter(filters).distinct()
-            else:
-                # If no search criteria are entered, do not return any results
-                queryset = Gym.objects.none()
         else:
-            # If the form is not bound (i.e., no GET parameters), do not return any results
             queryset = Gym.objects.none()
         return queryset
 
