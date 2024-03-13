@@ -54,9 +54,11 @@ class ContactInfoForm(forms.ModelForm):
         fields = '__all__'
 
 class GymSearchForm(forms.Form):
-    query = forms.CharField(required=False, label='Search', widget=forms.TextInput(attrs={'placeholder': 'Search by name, location...'}))
-    class_category = forms.ModelChoiceField(queryset=ClassCategory.objects.all(), required=False, label='Class')
-    amenity = forms.ModelChoiceField(queryset=Amenity.objects.all(), required=False, label='Amenity')
+    query = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': 'Search by name, classes...'}))
+    class_category = forms.ModelChoiceField(queryset=ClassCategory.objects.all(), required=False)
+    amenity = forms.ModelChoiceField(queryset=Amenity.objects.all(), required=False)
+    search_location = forms.CharField(required=False, widget=forms.TextInput(attrs={'placeholder': 'City or Zip'}))
+    use_current_location = forms.BooleanField(required=False, label="Use my current location")
 
 class GymImageForm(forms.ModelForm):
     class Meta:
