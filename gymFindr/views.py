@@ -72,7 +72,7 @@ class GymDetailView(DetailView):
 def geocode_address(address):
     """Converts address to coordinates using Google Maps Geocoding API."""
     api_url = 'https://maps.googleapis.com/maps/api/geocode/json'
-    params = {'address': address, 'key': 'AIzaSyD6543p_Xqlvs0-rJZqORrh_w_-XWz_11w'}
+    params = {'address': address, 'key': settings.GOOGLE_MAPS_API_KEY}
     response = requests.get(api_url, params=params)
     if response.status_code == 200:
         data = response.json()

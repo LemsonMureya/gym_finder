@@ -21,8 +21,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY')
-GDAL_LIBRARY_PATH = r'C:\Users\Lemson Mureya\miniconda3\envs\demoEnv\Library\bin\gdal.dll'
+GDAL_LIBRARY_PATH = os.getenv('GDAL_LIBRARY_PATH')
+
 os.environ['GDAL_LIBRARY_PATH'] = GDAL_LIBRARY_PATH
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
